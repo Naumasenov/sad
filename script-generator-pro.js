@@ -10,6 +10,7 @@ let selectedElement = null;
 let candidates = [];
 let debugMode = false;
 let currentTheme = 'light';
+let editingSiteIndex = null;
 
 // LocalStorage Keys
 const STORAGE_KEYS = {
@@ -186,9 +187,19 @@ function updateStats(type) {
 function loadSites() {
     const sites = getSites();
     const list = document.getElementById('siteList');
+    const emptyState = document.getElementById('siteEmpty');
+    const searchInput = document.getElementById('siteSearch');
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
     list.innerHTML = '';
-    
-    sites.forEach((site, index) => {
+
+    const filteredSites = sites
+        .map((site, index) => ({ site, index }))
+        .filter(({ site }) => {
+            if (!query) return true;
+            return site.name.toLowerCase().includes(query) || site.url.toLowerCase().includes(query);
+        });
+
+    filteredSites.forEach(({ site, index }) => {
         const item = document.createElement('div');
         item.className = `site-item ${site.active ? 'active' : ''}`;
         item.innerHTML = `
@@ -201,6 +212,7 @@ function loadSites() {
                 </p>
             </div>
             <div class="site-actions">
+                <button class="icon-btn ${site.active ? 'active' : ''}" onclick="setActiveSite(${index})" title="Set Active">⭐</button>
                 <button class="icon-btn" onclick="editSite(${index})" title="Edit">✏️</button>
                 <button class="icon-btn" onclick="deleteSite(${index})" title="Delete">🗑️</button>
                 <button class="icon-btn" onclick="loadSiteConfig(${index})" title="Load">📂</button>
@@ -208,6 +220,19 @@ function loadSites() {
         `;
         list.appendChild(item);
     });
+
+    updateSiteCount(filteredSites.length, sites.length);
+    if (emptyState) {
+        if (sites.length === 0) {
+            emptyState.textContent = 'No sites added yet. Create your first site to save scripts & presets.';
+            emptyState.style.display = 'block';
+        } else if (filteredSites.length === 0) {
+            emptyState.textContent = 'No sites match your search. Try a different keyword.';
+            emptyState.style.display = 'block';
+        } else {
+            emptyState.style.display = 'none';
+        }
+    }
 }
 
 function getSites() {
@@ -223,45 +248,41 @@ function saveSites(sites) {
 function openSiteManager() {
     const manager = document.getElementById('siteManager');
     manager.style.display = manager.style.display === 'none' ? 'block' : 'none';
+    if (manager.style.display === 'block') {
+        loadSites();
+        const searchInput = document.getElementById('siteSearch');
+        if (searchInput) {
+            searchInput.focus();
+        }
+    }
     log('info', 'Site manager toggled');
 }
 
 function addNewSite() {
-    const name = prompt('Enter site name:');
-    if (!name) return;
-    
-    const url = prompt('Enter site URL:');
-    if (!url) return;
-    
-    const sites = getSites();
-    sites.push({
-        name,
-        url,
-        status: 'active',
-        active: false,
-        lastUpdated: new Date().toISOString(),
-        scripts: {}
-    });
-    
-    saveSites(sites);
-    loadSites();
-    log('info', 'New site added', { name, url });
+    toggleSiteForm();
 }
 
 function editSite(index) {
     const sites = getSites();
     const site = sites[index];
-    
-    const newName = prompt('Edit site name:', site.name);
-    if (newName) site.name = newName;
-    
-    const newUrl = prompt('Edit site URL:', site.url);
-    if (newUrl) site.url = newUrl;
-    
-    site.lastUpdated = new Date().toISOString();
-    saveSites(sites);
-    loadSites();
-    log('info', 'Site edited', site);
+
+    editingSiteIndex = index;
+    const form = document.getElementById('siteForm');
+    const nameInput = document.getElementById('siteNameInput');
+    const urlInput = document.getElementById('siteUrlInput');
+    const helper = document.getElementById('siteFormHelper');
+
+    if (form && nameInput && urlInput) {
+        form.style.display = 'block';
+        nameInput.value = site.name;
+        urlInput.value = site.url;
+        if (helper) {
+            helper.textContent = 'Editing site details. Update name or URL and save.';
+        }
+        nameInput.focus();
+    }
+
+    log('info', 'Site edit opened', site);
 }
 
 function deleteSite(index) {
@@ -280,6 +301,131 @@ function loadSiteConfig(index) {
     
     alert(`Loading config for ${site.name}\n\nScripts:\n${JSON.stringify(site.scripts, null, 2)}`);
     log('info', 'Site config loaded', site);
+}
+
+function setActiveSite(index) {
+    const sites = getSites();
+    sites.forEach((site, i) => {
+        site.active = i === index;
+    });
+    saveSites(sites);
+    loadSites();
+    log('info', 'Active site updated', sites[index]);
+}
+
+function toggleSiteForm() {
+    const form = document.getElementById('siteForm');
+    if (!form) return;
+
+    if (form.style.display === 'none') {
+        editingSiteIndex = null;
+        form.style.display = 'block';
+        resetSiteForm();
+    } else {
+        cancelSiteForm();
+    }
+}
+
+function resetSiteForm() {
+    const nameInput = document.getElementById('siteNameInput');
+    const urlInput = document.getElementById('siteUrlInput');
+    const helper = document.getElementById('siteFormHelper');
+    if (nameInput) nameInput.value = '';
+    if (urlInput) urlInput.value = '';
+    if (helper) {
+        helper.textContent = 'Tip: Add full checkout or cart URL for faster testing.';
+    }
+}
+
+function cancelSiteForm() {
+    const form = document.getElementById('siteForm');
+    if (form) form.style.display = 'none';
+    editingSiteIndex = null;
+    resetSiteForm();
+}
+
+function submitSiteForm() {
+    const nameInput = document.getElementById('siteNameInput');
+    const urlInput = document.getElementById('siteUrlInput');
+    const helper = document.getElementById('siteFormHelper');
+
+    if (!nameInput || !urlInput) return;
+
+    const name = nameInput.value.trim();
+    const rawUrl = urlInput.value.trim();
+
+    if (!name) {
+        if (helper) helper.textContent = 'Please enter a site name.';
+        nameInput.focus();
+        return;
+    }
+
+    const normalizedUrl = normalizeUrl(rawUrl);
+    if (!normalizedUrl) {
+        if (helper) helper.textContent = 'Please enter a valid URL (example: https://example.com/checkout).';
+        urlInput.focus();
+        return;
+    }
+
+    const sites = getSites();
+    const now = new Date().toISOString();
+
+    if (editingSiteIndex !== null) {
+        const site = sites[editingSiteIndex];
+        site.name = name;
+        site.url = normalizedUrl;
+        site.lastUpdated = now;
+        saveSites(sites);
+        log('info', 'Site edited', site);
+    } else {
+        sites.push({
+            name,
+            url: normalizedUrl,
+            status: 'active',
+            active: sites.length === 0,
+            lastUpdated: now,
+            scripts: {}
+        });
+        saveSites(sites);
+        log('info', 'New site added', { name, url: normalizedUrl });
+    }
+
+    cancelSiteForm();
+    loadSites();
+}
+
+function normalizeUrl(url) {
+    if (!url) return '';
+    const trimmed = url.trim();
+    const candidate = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+        ? trimmed
+        : `https://${trimmed}`;
+
+    try {
+        const parsed = new URL(candidate);
+        return parsed.href;
+    } catch (error) {
+        log('error', 'Invalid URL provided', { url: trimmed });
+        return '';
+    }
+}
+
+function updateSiteCount(visibleCount, totalCount) {
+    const count = document.getElementById('siteCount');
+    if (!count) return;
+    if (totalCount === 0) {
+        count.textContent = '0 sites';
+        return;
+    }
+
+    const suffix = totalCount === 1 ? 'site' : 'sites';
+    count.textContent = visibleCount === totalCount
+        ? `${totalCount} ${suffix}`
+        : `${visibleCount} of ${totalCount} ${suffix}`;
+}
+
+function filterSites() {
+    loadSites();
 }
 
 // Preset Loading
@@ -306,7 +452,15 @@ function setupKeyboardShortcuts() {
             // Ctrl/Cmd + K - Quick search
             if (e.key === 'k') {
                 e.preventDefault();
-                alert('Quick search coming soon!');
+                const manager = document.getElementById('siteManager');
+                if (manager && manager.style.display === 'none') {
+                    openSiteManager();
+                }
+                const searchInput = document.getElementById('siteSearch');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
             }
             
             // Ctrl/Cmd + S - Save
@@ -329,7 +483,7 @@ function setupKeyboardShortcuts() {
 function showKeyboardShortcuts() {
     alert(`⌨️ Keyboard Shortcuts:\n\n` +
           `Ctrl/Cmd + 1-5: Open generator for each script type\n` +
-          `Ctrl/Cmd + K: Quick search (coming soon)\n` +
+          `Ctrl/Cmd + K: Focus site search\n` +
           `Ctrl/Cmd + S: Save/Export settings\n` +
           `ESC: Close modal\n` +
           `Ctrl/Cmd + C: Copy script (when focused)`);
@@ -471,7 +625,23 @@ const scriptConfigs = {
         title: 'Cart Items Script Generator',
         diagnostic: `(function diagnoseCartItems() {
     const candidates = [];
-    const MAX = 8000;
+    const MAX = 12000;
+    const prioritizedSelectors = [
+        '[data-cart-items]',
+        '[data-cart]',
+        '[data-basket]',
+        '.cart-items',
+        '.cart__items',
+        '.cart-items-list',
+        '.basket-items',
+        '#shopping-cart-table',
+        '.cart-table',
+        '.cart-container',
+        '#order_review',
+        '.order-review',
+        '.checkout-review-order',
+        '.order-summary'
+    ];
     
     function isVisible(el) {
         if (!el || el.nodeType !== 1) return false;
@@ -484,27 +654,53 @@ const scriptConfigs = {
         const text = (el.textContent || '').toLowerCase();
         const cls = (el.className || '').toLowerCase();
         const id = (el.id || '').toLowerCase();
+        const attrs = [el.getAttribute('data-testid'), el.getAttribute('data-test'), el.getAttribute('data-qa'), el.getAttribute('aria-label')]
+            .filter(Boolean).join(' ').toLowerCase();
         
-        if (/cart|basket|корзин|количк/i.test(cls + id)) score += 15;
-        if (/product|item|товар|продукт/i.test(cls + id)) score += 10;
-        if (/price|цена/i.test(text)) score += 5;
-        if (el.querySelectorAll('img, .product, .item').length > 0) score += 10;
-        if (/header|footer|nav|menu/i.test(cls + id)) score -= 20;
-        if (text.length < 50) score -= 10;
+        if (/cart|basket|корзин|количк|checkout|summary/i.test(cls + id + attrs)) score += 18;
+        if (/product|item|товар|продукт|line/i.test(cls + id + attrs)) score += 12;
+        if (/price|цена|subtotal|total|amount/i.test(text)) score += 6;
+        if (el.querySelectorAll('img, .product, .item, [data-product]').length > 0) score += 10;
+        if (/header|footer|nav|menu|breadcrumb/i.test(cls + id)) score -= 20;
+        if (text.length < 40) score -= 8;
         
         return score;
     }
     
     function buildSelector(el) {
         if (el.id) return '#' + el.id;
-        let classes = (el.className || '').split(' ').filter(c => c && !/^[a-f0-9]{6,}$/i.test(c)).slice(0, 2);
+        const dataAttrs = ['data-testid', 'data-test', 'data-qa', 'data-cart', 'data-basket'];
+        for (const attr of dataAttrs) {
+            const value = el.getAttribute(attr);
+            if (value) return \`[\${attr}="\${value}"]\`;
+        }
+        const classes = (el.className || '')
+            .split(' ')
+            .filter(c => c && !/^[a-f0-9]{6,}$/i.test(c))
+            .slice(0, 2);
         return classes.length ? el.tagName.toLowerCase() + '.' + classes.join('.') : el.tagName.toLowerCase();
     }
+    
+    prioritizedSelectors.forEach(sel => {
+        try {
+            const el = document.querySelector(sel);
+            if (el) {
+                candidates.push({
+                    score: 40,
+                    selector: sel,
+                    childCount: el.children.length,
+                    textLength: (el.textContent || '').length,
+                    hasImages: el.querySelectorAll('img').length,
+                    preview: (el.textContent || '').slice(0, 100)
+                });
+            }
+        } catch (e) {}
+    });
     
     Array.from(document.querySelectorAll('*')).slice(0, MAX).forEach(el => {
         if (!isVisible(el)) return;
         const score = getScore(el);
-        if (score < 5) return;
+        if (score < 8) return;
         
         candidates.push({
             score,
@@ -589,6 +785,17 @@ getItems();`,
         title: 'Payment Methods Script Generator',
         diagnostic: `(function diagnosePaymentMethods() {
     const candidates = [];
+    const MAX = 10000;
+    const prioritizedSelectors = [
+        '[data-payment-methods]',
+        '[data-payment-method]',
+        '#payment',
+        '.payment-methods',
+        '.payment-method',
+        '.payment-options',
+        '.checkout-payment-methods',
+        '.payment-list'
+    ];
     
     function isVisible(el) {
         const style = window.getComputedStyle(el);
@@ -600,25 +807,63 @@ getItems();`,
         const text = (el.textContent || '').toLowerCase();
         const cls = (el.className || '').toLowerCase();
         const id = (el.id || '').toLowerCase();
+        const attrs = [el.getAttribute('data-testid'), el.getAttribute('data-qa'), el.getAttribute('aria-label')]
+            .filter(Boolean).join(' ').toLowerCase();
         
-        if (/payment|плащ/i.test(cls + id + text)) score += 20;
-        if (/method|метод/i.test(cls + id + text)) score += 15;
-        if (/card|карт/i.test(text)) score += 10;
-        if (el.querySelector('input[type="radio"]')) score += 15;
+        if (/payment|плащ|checkout|method/i.test(cls + id + text + attrs)) score += 22;
+        if (/card|карт|credit|debit/i.test(text)) score += 10;
+        if (el.querySelector('input[type="radio"]')) score += 18;
+        if (el.querySelector('[data-payment-method], [data-method]')) score += 12;
         
         return score;
     }
     
-    Array.from(document.querySelectorAll('*')).slice(0, 8000).forEach(el => {
+    function buildSelector(el) {
+        if (el.id) return '#' + el.id;
+        const dataAttrs = ['data-testid', 'data-test', 'data-qa', 'data-payment-method', 'data-method'];
+        for (const attr of dataAttrs) {
+            const value = el.getAttribute(attr);
+            if (value) return \`[\${attr}="\${value}"]\`;
+        }
+        const classes = (el.className || '').split(' ').filter(Boolean).slice(0, 2);
+        return classes.length ? el.tagName.toLowerCase() + '.' + classes.join('.') : el.tagName.toLowerCase();
+    }
+    
+    prioritizedSelectors.forEach(sel => {
+        try {
+            const el = document.querySelector(sel);
+            if (el) {
+                candidates.push({
+                    score: 45,
+                    selector: sel,
+                    radioCount: el.querySelectorAll('input[type="radio"]').length,
+                    preview: (el.textContent || '').slice(0, 80)
+                });
+            }
+        } catch (e) {}
+    });
+    
+    Array.from(document.querySelectorAll('input[type="radio"]')).forEach(input => {
+        const container = input.closest('fieldset, form, .payment-method, .payment-option, li, div');
+        if (!container || !isVisible(container)) return;
+        const score = getScore(container) + 10;
+        if (score < 18) return;
+        candidates.push({
+            score,
+            selector: buildSelector(container),
+            radioCount: container.querySelectorAll('input[type="radio"]').length,
+            preview: (container.textContent || '').slice(0, 80)
+        });
+    });
+    
+    Array.from(document.querySelectorAll('*')).slice(0, MAX).forEach(el => {
         if (!isVisible(el)) return;
         const score = getScore(el);
-        if (score < 15) return;
-        
-        const selector = el.id ? '#' + el.id : el.className ? '.' + el.className.split(' ')[0] : el.tagName.toLowerCase();
+        if (score < 18) return;
         
         candidates.push({
             score,
-            selector,
+            selector: buildSelector(el),
             radioCount: el.querySelectorAll('input[type="radio"]').length,
             preview: (el.textContent || '').slice(0, 80)
         });
@@ -734,32 +979,73 @@ observer.observe(document.body, { childList: true, subtree: true });`,
         title: 'Disable Card Fields Script Generator',
         diagnostic: `(function diagnoseCardFields() {
     const candidates = [];
+    const patterns = {
+        number: /card.*number|pan|номер|cc-number|cardnumber/i,
+        cvv: /cvv|cvc|security|cvn/i,
+        exp: /exp|expiry|validity|mm|yy/i,
+        name: /cardholder|name.*card|им.*карт/i
+    };
     
-    function getScore(form) {
+    function scoreInputs(container) {
         let score = 0;
-        form.querySelectorAll('input').forEach(inp => {
-            const name = (inp.name || '').toLowerCase();
-            const id = (inp.id || '').toLowerCase();
-            const placeholder = (inp.placeholder || '').toLowerCase();
+        container.querySelectorAll('input, select').forEach(inp => {
+            const tokens = [
+                inp.name,
+                inp.id,
+                inp.placeholder,
+                inp.getAttribute('aria-label'),
+                inp.autocomplete
+            ].filter(Boolean).join(' ').toLowerCase();
             
-            if (/card|карт|pan|number/i.test(name + id + placeholder)) score += 20;
-            if (/cvv|cvc|security/i.test(name + id + placeholder)) score += 15;
-            if (/exp|validity/i.test(name + id + placeholder)) score += 15;
+            if (patterns.number.test(tokens)) score += 20;
+            if (patterns.cvv.test(tokens)) score += 15;
+            if (patterns.exp.test(tokens)) score += 15;
+            if (patterns.name.test(tokens)) score += 8;
+            if (inp.autocomplete && inp.autocomplete.startsWith('cc-')) score += 12;
         });
         return score;
     }
     
-    document.querySelectorAll('form').forEach(form => {
-        const score = getScore(form);
+    function buildSelector(el) {
+        if (el.id) return '#' + el.id;
+        const dataAttrs = ['data-testid', 'data-test', 'data-qa', 'data-payment-form'];
+        for (const attr of dataAttrs) {
+            const value = el.getAttribute(attr);
+            if (value) return \`[\${attr}="\${value}"]\`;
+        }
+        const cls = (el.className || '').split(' ').filter(Boolean)[0];
+        return cls ? \`\${el.tagName.toLowerCase()}.\${cls}\` : el.tagName.toLowerCase();
+    }
+    
+    const containers = new Set();
+    document.querySelectorAll('input, select').forEach(inp => {
+        const tokens = [
+            inp.name,
+            inp.id,
+            inp.placeholder,
+            inp.getAttribute('aria-label'),
+            inp.autocomplete
+        ].filter(Boolean).join(' ').toLowerCase();
+        if (patterns.number.test(tokens) || patterns.cvv.test(tokens) || patterns.exp.test(tokens)) {
+            const container = inp.closest('form, .payment-form, .card-form, fieldset, section, div');
+            if (container) containers.add(container);
+        }
+    });
+    
+    document.querySelectorAll('form').forEach(form => containers.add(form));
+    
+    containers.forEach(container => {
+        const score = scoreInputs(container);
         if (score < 20) return;
-        
-        const selector = form.id ? '#' + form.id : 'form.' + (form.className.split(' ')[0] || '');
-        
         candidates.push({
             score,
-            selector,
-            inputCount: form.querySelectorAll('input').length,
-            preview: Array.from(form.querySelectorAll('input')).map(i => i.name || i.id).filter(Boolean).slice(0, 3).join(', ')
+            selector: buildSelector(container),
+            inputCount: container.querySelectorAll('input').length,
+            preview: Array.from(container.querySelectorAll('input'))
+                .map(i => i.name || i.id || i.autocomplete)
+                .filter(Boolean)
+                .slice(0, 4)
+                .join(', ')
         });
     });
     
@@ -875,34 +1161,76 @@ document.addEventListener('DOMContentLoaded', disableCardFilling);`,
         title: 'Autofill Card Script Generator',
         diagnostic: `(function diagnoseCardFields() {
     const candidates = [];
+    const patterns = {
+        number: /card.*number|pan|номер|cc-number|cardnumber/i,
+        month: /exp.*month|expiry.*month|mm|месец/i,
+        year: /exp.*year|expiry.*year|yy|година/i,
+        cvv: /cvv|cvc|security|cvn/i,
+        name: /cardholder|name.*card|име.*карт/i
+    };
     
-    function findCardFields(form) {
+    function getTokens(el) {
+        return [el.name, el.id, el.placeholder, el.getAttribute('aria-label'), el.autocomplete]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+    }
+    
+    function findCardFields(container) {
         const fields = { number: null, month: null, year: null, cvv: null, name: null };
         
-        form.querySelectorAll('input, select').forEach(el => {
-            const id = (el.name || el.id || el.placeholder || '').toLowerCase();
+        container.querySelectorAll('input, select').forEach(el => {
+            const tokens = getTokens(el);
             
-            if (/card.*number|pan|номер/i.test(id)) fields.number = el;
-            else if (/exp.*month|месец/i.test(id)) fields.month = el;
-            else if (/exp.*year|година/i.test(id)) fields.year = el;
-            else if (/cvv|cvc|security/i.test(id)) fields.cvv = el;
-            else if (/cardholder|name.*card/i.test(id)) fields.name = el;
+            if (patterns.number.test(tokens)) fields.number = el;
+            else if (patterns.month.test(tokens)) fields.month = el;
+            else if (patterns.year.test(tokens)) fields.year = el;
+            else if (patterns.cvv.test(tokens)) fields.cvv = el;
+            else if (patterns.name.test(tokens)) fields.name = el;
+            
+            if (el.autocomplete === 'cc-number') fields.number = el;
+            if (el.autocomplete === 'cc-exp-month') fields.month = el;
+            if (el.autocomplete === 'cc-exp-year') fields.year = el;
+            if (el.autocomplete === 'cc-csc') fields.cvv = el;
+            if (el.autocomplete === 'cc-name') fields.name = el;
         });
         
         return fields;
     }
     
-    document.querySelectorAll('form').forEach(form => {
-        const fields = findCardFields(form);
+    function buildSelector(el) {
+        if (el.id) return '#' + el.id;
+        const dataAttrs = ['data-testid', 'data-test', 'data-qa', 'data-payment-form'];
+        for (const attr of dataAttrs) {
+            const value = el.getAttribute(attr);
+            if (value) return \`[\${attr}="\${value}"]\`;
+        }
+        const cls = (el.className || '').split(' ').filter(Boolean)[0];
+        return cls ? \`\${el.tagName.toLowerCase()}.\${cls}\` : el.tagName.toLowerCase();
+    }
+    
+    const containers = new Set();
+    document.querySelectorAll('input, select').forEach(el => {
+        const tokens = getTokens(el);
+        if (patterns.number.test(tokens) || patterns.cvv.test(tokens) || patterns.month.test(tokens) || patterns.year.test(tokens)) {
+            const container = el.closest('form, .payment-form, .card-form, fieldset, section, div');
+            if (container) containers.add(container);
+        }
+    });
+    
+    document.querySelectorAll('form').forEach(form => containers.add(form));
+    
+    containers.forEach(container => {
+        const fields = findCardFields(container);
         const foundCount = Object.values(fields).filter(Boolean).length;
         if (foundCount < 3) return;
         
-        const selector = form.id ? '#' + form.id : 'form.' + (form.className.split(' ')[0] || '');
-        
         candidates.push({
-            selector,
+            selector: buildSelector(container),
             foundCount,
-            fields: Object.entries(fields).filter(([_, el]) => el).map(([type, el]) => \`\${type}: \${el.name || el.id}\`)
+            fields: Object.entries(fields)
+                .filter(([_, el]) => el)
+                .map(([type, el]) => \`\${type}: \${el.name || el.id || el.autocomplete}\`)
         });
     });
     
@@ -1030,18 +1358,34 @@ document.addEventListener('DOMContentLoaded', disableCardFilling);`,
         title: 'Total Amount Script Generator',
         diagnostic: `(function diagnoseTotalAmount() {
     const candidates = [];
-    const MAX = 12000;
+    const MAX = 14000;
     
     const currencyTokens = [
         { re: /€/g, code: "EUR" },
         { re: /\\bEUR\\b/g, code: "EUR" },
         { re: /\\bBGN\\b/g, code: "BGN" },
         { re: /лв\\.?/g, code: "BGN" },
-        { re: /\\$/g, code: "USD" }
+        { re: /\\$/g, code: "USD" },
+        { re: /\\bUSD\\b/g, code: "USD" },
+        { re: /£/g, code: "GBP" },
+        { re: /\\bGBP\\b/g, code: "GBP" },
+        { re: /\\bRON\\b/g, code: "RON" },
+        { re: /lei/g, code: "RON" }
     ];
     
-    const positiveWords = ["total", "grand", "amount", "pay", "payment", "общо", "сума", "плащ"];
-    const negativeWords = ["unit", "each", "per", "product", "item", "subtotal", "бр", "продукт"];
+    const positiveWords = ["total", "grand", "amount", "pay", "payment", "overall", "due", "общо", "сума", "плащ"];
+    const negativeWords = ["unit", "each", "per", "product", "item", "subtotal", "shipping", "tax", "бр", "продукт"];
+    const prioritySelectors = [
+        '[data-total]',
+        '[data-cart-total]',
+        '[data-order-total]',
+        '.order-total',
+        '.cart-total',
+        '.grand-total',
+        '.summary-total',
+        '.totals',
+        '.order-summary__section--total'
+    ];
     
     function isVisible(el) {
         const style = window.getComputedStyle(el);
@@ -1071,10 +1415,10 @@ document.addEventListener('DOMContentLoaded', disableCardFilling);`,
     
     function getScore(el, info) {
         let score = 0;
-        const h = (el.textContent + (el.className || '') + (el.id || '')).toLowerCase();
+        const h = (el.textContent + (el.className || '') + (el.id || '') + (el.getAttribute('aria-label') || '')).toLowerCase();
         
         if (info.currencies.length) score += 10;
-        if (info.amount >= 5 && info.amount <= 20000) score += 4;
+        if (info.amount >= 5 && info.amount <= 50000) score += 6;
         
         for (const w of positiveWords) {
             if (h.includes(w)) score += 8;
@@ -1083,21 +1427,45 @@ document.addEventListener('DOMContentLoaded', disableCardFilling);`,
             if (h.includes(w)) score -= 6;
         }
         
-        if (/button|strong|bdi/.test(el.tagName.toLowerCase())) score += 10;
+        if (/button|strong|bdi|span/.test(el.tagName.toLowerCase())) score += 6;
+        if (el.closest('.order-summary, .totals, .checkout, .cart-summary')) score += 10;
         
         return score;
     }
     
     function buildSelector(el) {
         if (el.id) return '#' + el.id;
+        const dataAttrs = ['data-testid', 'data-test', 'data-qa', 'data-total', 'data-cart-total', 'data-order-total'];
+        for (const attr of dataAttrs) {
+            const value = el.getAttribute(attr);
+            if (value) return \`[\${attr}="\${value}"]\`;
+        }
         const classes = (el.className || '').split(' ').filter(c => c && !/^[a-f0-9]{6,}$/i.test(c)).slice(0, 2);
         return classes.length ? el.tagName.toLowerCase() + '.' + classes.join('.') : el.tagName.toLowerCase();
     }
     
+    prioritySelectors.forEach(sel => {
+        try {
+            const el = document.querySelector(sel);
+            if (el) {
+                const info = extractAmount(el.textContent || '');
+                if (info) {
+                    candidates.push({
+                        score: 45,
+                        selector: sel,
+                        amount: info.amount,
+                        currencies: info.currencies,
+                        preview: (el.textContent || '').slice(0, 80)
+                    });
+                }
+            }
+        } catch (e) {}
+    });
+    
     Array.from(document.querySelectorAll('*')).slice(0, MAX).forEach(el => {
         if (!isVisible(el)) return;
         const text = el.textContent || '';
-        if (!/[€$]|лв|BGN|EUR|\\d/.test(text)) return;
+        if (!/[€$£]|лв|BGN|EUR|USD|GBP|RON|\\d/.test(text)) return;
         
         const info = extractAmount(text);
         if (!info) return;
