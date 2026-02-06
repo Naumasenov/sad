@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Script Generator Pro</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #764ba2;
+            --secondary: #f093fb;
+            --success: #38ef7d;
+            --warning: #ed8936;
+            --danger: #fc8181;
+            --dark: #1a202c;
+            --light: #f7fafc;
+            --bg-card: white;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            --bg-card: #2d3748;
+            --text-primary: #e2e8f0;
+            --text-secondary: #a0aec0;
+            --border: #4a5568;
+            --light: #1a202c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        [data-theme="dark"] body {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Header with controls */
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            margin-bottom: 20px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Quick Actions Toolbar */
+        .quick-actions {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .quick-actions h3 {
+            color: var(--text-primary);
+            margin-right: auto;
+            font-size: 1.2rem;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .action-btn.success {
+            background: linear-gradient(135deg, #11998e, var(--success));
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Site Manager */
+        .site-manager {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .site-manager h3 {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .site-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .site-item {
+            background: var(--light);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .site-item:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .site-item.active {
+            border-color: var(--primary);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .site-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .site-status.active { background: var(--success); }
+        .site-status.warning { background: var(--warning); }
+        .site-status.error { background: var(--danger); }
+
+        .site-info h4 {
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .site-info p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .site-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .icon-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        /* Main Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        }
+
+        .card-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--success);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .icon-cart { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .icon-payment { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .icon-disable { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .icon-autofill { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .icon-total { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .card-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: var(--light);
+            border-radius: 10px;
+        }
+
+        .stat {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Presets Panel */
+        .presets-panel {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .presets-panel h3 {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .preset-item {
+            background: var(--light);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .preset-item:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .preset-item .preset-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .preset-item h4 {
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .preset-item p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 1200px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+
+        .modal-header h2 {
+            font-size: 2rem;
+            color: var(--text-primary);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: var(--light);
+            color: var(--text-primary);
+        }
+
+        .progress-bar {
+            background: var(--border);
+            height: 8px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            transition: width 0.5s ease;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .alert-info {
+            background: #ebf8ff;
+            border: 2px solid #63b3ed;
+            color: #2c5282;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            border: 2px solid #68d391;
+            color: #22543d;
+        }
+
+        .alert-warning {
+            background: #fffaf0;
+            border: 2px solid var(--warning);
+            color: #744210;
+        }
+
+        [data-theme="dark"] .alert-info {
+            background: rgba(66, 153, 225, 0.2);
+            border-color: #4299e1;
+            color: #90cdf4;
+        }
+
+        [data-theme="dark"] .alert-success {
+            background: rgba(72, 187, 120, 0.2);
+            border-color: #48bb78;
+            color: #9ae6b4;
+        }
+
+        .code-box {
+            background: var(--dark);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .code-box pre {
+            color: #e2e8f0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin: 0;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .code-label {
+            color: #a0aec0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .confidence-high {
+            background: var(--success);
+            color: white;
+        }
+
+        .confidence-medium {
+            background: var(--warning);
+            color: white;
+        }
+
+        .confidence-low {
+            background: var(--danger);
+            color: white;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .result-item {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .result-item:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .result-item.selected {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: var(--primary);
+        }
+
+        .result-item h4 {
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-item p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin: 5px 0;
+        }
+
+        .result-item code {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-group button {
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--text-secondary);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, var(--success) 100%);
+            color: white;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+            background: var(--light);
+            color: var(--text-primary);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .tip {
+            background: #fffaf0;
+            border-left: 4px solid var(--warning);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+
+        [data-theme="dark"] .tip {
+            background: rgba(237, 137, 54, 0.2);
+        }
+
+        .tip strong {
+            color: #c05621;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        [data-theme="dark"] .tip strong {
+            color: var(--warning);
+        }
+
+        .variant-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .variant-tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .variant-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .variant-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .variant-content {
+            display: none;
+        }
+
+        .variant-content.active {
+            display: block;
+        }
+
+        /* Keyboard shortcut hint */
+        .shortcut-hint {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 8px;
+            color: var(--text-secondary);
+        }
+
+        /* Debug Logger */
+        .debug-logger {
+            background: var(--dark);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .debug-entry {
+            padding: 8px;
+            border-left: 3px solid transparent;
+            margin-bottom: 5px;
+        }
+
+        .debug-entry.info { border-left-color: #4299e1; color: #90cdf4; }
+        .debug-entry.success { border-left-color: var(--success); color: #9ae6b4; }
+        .debug-entry.warning { border-left-color: var(--warning); color: #fbd38d; }
+        .debug-entry.error { border-left-color: var(--danger); color: #fc8181; }
+
+        .debug-timestamp {
+            color: #718096;
+            font-size: 0.75rem;
+        }
+
+        /* Documentation Preview */
+        .doc-preview {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .doc-preview h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+        }
+
+        .doc-preview pre {
+            background: var(--dark);
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        /* Batch Mode */
+        .batch-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .batch-script {
+            background: var(--light);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .batch-script.selected {
+            border-color: var(--primary);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .batch-script .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .batch-script h4 {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .batch-script .status {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin: 10px auto 0;
+        }
+
+        .status.pending { background: #cbd5e0; }
+        .status.processing { background: var(--warning); animation: pulse 1s infinite; }
+        .status.success { background: var(--success); }
+        .status.error { background: var(--danger); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .batch-container {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Controls -->
+        <header>
+            <h1>🚀 Payment Script Generator Pro</h1>
+            <p>Advanced Script Generator с AI-Powered Detection</p>
+            
+            <div class="header-controls">
+                <button class="control-btn" onclick="openAIAssistant()">
+                    <span>🤖</span>
+                    <span>AI Assistant</span>
+                </button>
+                <button class="control-btn" onclick="openConsole()">
+                    <span>💻</span>
+                    <span>Console</span>
+                </button>
+                <button class="control-btn" onclick="showDebugInfo()" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                    <span>🐛</span>
+                    <span>DEBUG</span>
+                </button>
+                <button class="control-btn" onclick="toggleTheme()">
+                    <span id="themeIcon">🌙</span>
+                    <span id="themeText">Dark Mode</span>
+                </button>
+                <button class="control-btn" onclick="toggleDebug()">
+                    <span>🐛</span>
+                    <span>Debug Mode</span>
+                </button>
+                <button class="control-btn" onclick="showKeyboardShortcuts()">
+                    <span>⌨️</span>
+                    <span>Shortcuts</span>
+                </button>
+                <button class="control-btn" onclick="exportSettings()">
+                    <span>📤</span>
+                    <span>Export</span>
+                </button>
+                <button class="control-btn" onclick="importSettings()">
+                    <span>📥</span>
+                    <span>Import</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Quick Actions Toolbar -->
+        <div class="quick-actions">
+            <h3>⚡ Quick Actions</h3>
+            <button class="action-btn primary" onclick="openBatchMode()">
+                📦 Batch Generate
+            </button>
+            <button class="action-btn success" onclick="openSiteManager()">
+                🌐 Manage Sites
+            </button>
+            <button class="action-btn primary" onclick="showDocumentation()">
+                📖 Documentation
+            </button>
+        </div>
+
+        <!-- Platform Presets -->
+        <div class="presets-panel">
+            <h3>📋 Platform Presets</h3>
+            <div class="preset-grid">
+                <div class="preset-item" onclick="loadPreset('woocommerce')">
+                    <div class="preset-icon">🛍️</div>
+                    <h4>WooCommerce</h4>
+                    <p>WordPress eCommerce</p>
+                </div>
+                <div class="preset-item" onclick="loadPreset('shopify')">
+                    <div class="preset-icon">🛒</div>
+                    <h4>Shopify</h4>
+                    <p>Shopify Stores</p>
+                </div>
+                <div class="preset-item" onclick="loadPreset('opencart')">
+                    <div class="preset-icon">🏪</div>
+                    <h4>OpenCart</h4>
+                    <p>OpenCart Platform</p>
+                </div>
+                <div class="preset-item" onclick="loadPreset('magento')">
+                    <div class="preset-icon">🏬</div>
+                    <h4>Magento</h4>
+                    <p>Magento 2</p>
+                </div>
+                <div class="preset-item" onclick="loadPreset('prestashop')">
+                    <div class="preset-icon">🏢</div>
+                    <h4>PrestaShop</h4>
+                    <p>PrestaShop Stores</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Multi-Site Manager -->
+        <div class="site-manager" id="siteManager" style="display: none;">
+            <h3>🌐 Site Manager</h3>
+            <div class="site-list" id="siteList"></div>
+            <button class="btn btn-primary" onclick="addNewSite()" style="margin-top: 15px;">
+                ➕ Add New Site
+            </button>
+        </div>
+
+        <!-- Main Generator Cards -->
+        <div class="grid">
+            <!-- Cart Items -->
+            <div class="card">
+                <div class="card-badge" id="cartBadge">98%</div>
+                <div class="card-icon icon-cart">🛒</div>
+                <h2>Съдържание на количка</h2>
+                <p>Извличане на HTML съдържанието на количката за проверка на покупките</p>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value" id="cartUsage">12</span>
+                        <span class="stat-label">Uses</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="cartSuccess">98%</span>
+                        <span class="stat-label">Success</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="openGenerator('cart')">
+                    Генерирай скрипт <span class="shortcut-hint">Ctrl+1</span>
+                </button>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="card">
+                <div class="card-badge" id="paymentBadge">95%</div>
+                <div class="card-icon icon-payment">💳</div>
+                <h2>Методи за плащане</h2>
+                <p>Скриване на ненужни методи за плащане, оставяне само на плащане с карта</p>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value" id="paymentUsage">28</span>
+                        <span class="stat-label">Uses</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="paymentSuccess">95%</span>
+                        <span class="stat-label">Success</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="openGenerator('payment')">
+                    Генерирай скрипт <span class="shortcut-hint">Ctrl+2</span>
+                </button>
+            </div>
+
+            <!-- Disable Card Fields -->
+            <div class="card">
+                <div class="card-badge" id="disableBadge">100%</div>
+                <div class="card-icon icon-disable">🔒</div>
+                <h2>Блокиране на полета</h2>
+                <p>Деактивиране на възможността за ръчно попълване на картови данни</p>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value" id="disableUsage">45</span>
+                        <span class="stat-label">Uses</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="disableSuccess">100%</span>
+                        <span class="stat-label">Success</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="openGenerator('disable')">
+                    Генерирай скрипт <span class="shortcut-hint">Ctrl+3</span>
+                </button>
+            </div>
+
+            <!-- Autofill Card -->
+            <div class="card">
+                <div class="card-badge" id="autofillBadge">92%</div>
+                <div class="card-icon icon-autofill">⚡</div>
+                <h2>Автоматично попълване</h2>
+                <p>Автоматично попълване на картови данни в платежната форма</p>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value" id="autofillUsage">38</span>
+                        <span class="stat-label">Uses</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="autofillSuccess">92%</span>
+                        <span class="stat-label">Success</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="openGenerator('autofill')">
+                    Генерирай скрипт <span class="shortcut-hint">Ctrl+4</span>
+                </button>
+            </div>
+
+            <!-- Total Amount -->
+            <div class="card">
+                <div class="card-badge" id="totalBadge">97%</div>
+                <div class="card-icon icon-total">💰</div>
+                <h2>Обща сума</h2>
+                <p>Прихващане на крайната сума за плащане от страницата</p>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value" id="totalUsage">52</span>
+                        <span class="stat-label">Uses</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="totalSuccess">97%</span>
+                        <span class="stat-label">Success</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="openGenerator('total')">
+                    Генерирай скрипт <span class="shortcut-hint">Ctrl+5</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Debug Logger (hidden by default) -->
+        <div class="debug-logger" id="debugLogger" style="display: none;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <strong style="color: #e2e8f0;">🐛 Debug Log</strong>
+                <button onclick="clearDebugLog()" style="background: none; border: none; color: #fc8181; cursor: pointer;">Clear</button>
+            </div>
+            <div id="debugEntries"></div>
+        </div>
+    </div>
+
+    <!-- Generator Modal -->
+    <div id="generatorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalTitle">Генератор на скрипт</h2>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar" style="width: 33%"></div>
+                    </div>
+                </div>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+
+            <!-- Step 1: Run Diagnostic -->
+            <div id="step1" class="step-content active">
+                <h3>Стъпка 1: Пуснете диагностичния скрипт</h3>
+                
+                <div class="alert alert-info">
+                    <strong>📋 Инструкции:</strong>
+                    <ol style="margin: 10px 0 0 20px;">
+                        <li>Отворете страницата на търговеца в браузъра</li>
+                        <li>Натиснете F12 или отворете Developer Tools</li>
+                        <li>Отидете в раздел "Console"</li>
+                        <li>Копирайте и поставете диагностичния скрипт</li>
+                        <li>Натиснете Enter</li>
+                        <li>Копирайте резултата и го поставете по-долу</li>
+                    </ol>
+                </div>
+
+                <div class="code-box">
+                    <div class="code-header">
+                        <div class="code-label">
+                            <span>📜 Diagnostic Script</span>
+                        </div>
+                        <button class="copy-btn" onclick="copyDiagnostic()">📋 Copy</button>
+                    </div>
+                    <pre id="diagnosticScript"></pre>
+                </div>
+
+                <h4 style="margin: 30px 0 15px; color: var(--text-primary);">Поставете резултата от конзолата:</h4>
+                <textarea id="diagnosticResult" placeholder="Paste console output here..."></textarea>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="analyzeDiagnostic()">Analyze Result</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Select Element -->
+            <div id="step2" class="step-content">
+                <h3>Стъпка 2: Изберете елемент</h3>
+                
+                <div class="alert alert-success">
+                    <strong>✅ Candidates Found!</strong> Select the most appropriate element.
+                </div>
+
+                <div id="resultsContainer"></div>
+
+                <!-- Payment Methods Configuration (only for payment scripts) -->
+                <div id="paymentConfigButton" style="display: none; margin: 20px 0;">
+                    <button class="btn btn-primary" onclick="openPaymentMethodsModal()" style="width: 100%;">
+                        ⚙️ Configure Payment Methods
+                    </button>
+                    <div style="margin-top: 10px; text-align: center; font-size: 0.9rem; color: var(--text-secondary);">
+                        💡 Select which payment methods to hide from customers
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="goToStep(1)">Back</button>
+                    <button class="btn btn-primary" onclick="generateScript()" id="generateBtn" disabled style="opacity: 0.5;">
+                        Generate Script
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Generated Script -->
+            <div id="step3" class="step-content">
+                <h3>Стъпка 3: Generated Scripts</h3>
+                
+                <div class="alert alert-success">
+                    <strong>🎉 Success!</strong> Scripts generated successfully!
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <label style="color: var(--text-primary); display: block; margin-bottom: 10px;">
+                        <strong>Script Name:</strong>
+                    </label>
+                    <input type="text" id="scriptName" placeholder="e.g., fashionstore-cart-v1" 
+                           style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--light); color: var(--text-primary);">
+                </div>
+
+                <!-- HTML Tools (only for cart scripts) -->
+                <div id="htmlPreviewButton" style="display: none; margin: 20px 0;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <button class="btn btn-primary" onclick="openHTMLVisualizer()" style="width: 100%;">
+                            🎨 HTML Visualizer
+                        </button>
+                        <button class="btn btn-secondary" onclick="showHTMLPreview()" style="width: 100%;">
+                            👀 Preview Raw HTML
+                        </button>
+                    </div>
+                    <div style="margin-top: 10px; text-align: center; font-size: 0.9rem; color: var(--text-secondary);">
+                        💡 Visualizer: Paste HTML and see it rendered | Preview: See the extracted HTML code
+                    </div>
+                </div>
+
+                <!-- Script Variants Grid -->
+                <div style="margin: 30px 0;">
+                    <h4 style="color: var(--text-primary); margin-bottom: 20px;">Choose Your Script Variant:</h4>
+                    
+                    <div style="display: grid; gap: 20px;">
+                        <!-- Basic Variant Card -->
+                        <div class="variant-card" style="background: var(--light); border: 2px solid var(--border); border-radius: 15px; padding: 25px; transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                <div>
+                                    <h3 style="color: var(--text-primary); margin-bottom: 5px;">🎯 Basic Variant</h3>
+                                    <p style="color: var(--text-secondary); font-size: 0.95rem;">Simple and direct - Best for static pages</p>
+                                </div>
+                                <span class="confidence-badge confidence-high" id="confidence0">95%</span>
+                            </div>
+                            
+                            <div style="background: rgba(102, 126, 234, 0.1); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                                <strong style="color: var(--primary); display: block; margin-bottom: 8px;">✨ Features:</strong>
+                                <ul style="margin: 0; padding-left: 20px; color: var(--text-primary);">
+                                    <li>Quick execution</li>
+                                    <li>Minimal code (~10 lines)</li>
+                                    <li>Easy to understand</li>
+                                    <li>Works on 90%+ of sites</li>
+                                </ul>
+                            </div>
+
+                            <div class="code-box" style="margin-bottom: 15px;">
+                                <pre id="script0" style="max-height: 200px; overflow-y: auto; margin: 0;"></pre>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-primary" onclick="openVariantModal(0)" style="flex: 1;">
+                                    📖 View Full Code
+                                </button>
+                                <button class="btn btn-success" onclick="copyScript(0)" style="flex: 1;">
+                                    📋 Copy Script
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Optimized Variant Card -->
+                        <div class="variant-card" style="background: var(--light); border: 2px solid var(--border); border-radius: 15px; padding: 25px; transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                <div>
+                                    <h3 style="color: var(--text-primary); margin-bottom: 5px;">⚡ Optimized Variant</h3>
+                                    <p style="color: var(--text-secondary); font-size: 0.95rem;">Uses MutationObserver - Best for dynamic SPAs</p>
+                                </div>
+                                <span class="confidence-badge confidence-medium" id="confidence1">90%</span>
+                            </div>
+                            
+                            <div style="background: rgba(102, 126, 234, 0.1); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                                <strong style="color: var(--primary); display: block; margin-bottom: 8px;">✨ Features:</strong>
+                                <ul style="margin: 0; padding-left: 20px; color: var(--text-primary);">
+                                    <li>Watches for DOM changes</li>
+                                    <li>Auto-retry on failure</li>
+                                    <li>Event listeners</li>
+                                    <li>Modern approach (~25 lines)</li>
+                                </ul>
+                            </div>
+
+                            <div class="code-box" style="margin-bottom: 15px;">
+                                <pre id="script1" style="max-height: 200px; overflow-y: auto; margin: 0;"></pre>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-primary" onclick="openVariantModal(1)" style="flex: 1;">
+                                    📖 View Full Code
+                                </button>
+                                <button class="btn btn-success" onclick="copyScript(1)" style="flex: 1;">
+                                    📋 Copy Script
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Variant Card -->
+                        <div class="variant-card" style="background: var(--light); border: 2px solid var(--border); border-radius: 15px; padding: 25px; transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                <div>
+                                    <h3 style="color: var(--text-primary); margin-bottom: 5px;">🔧 Advanced Variant</h3>
+                                    <p style="color: var(--text-secondary); font-size: 0.95rem;">With fallbacks and error handling - Most reliable</p>
+                                </div>
+                                <span class="confidence-badge confidence-high" id="confidence2">98%</span>
+                            </div>
+                            
+                            <div style="background: rgba(102, 126, 234, 0.1); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                                <strong style="color: var(--primary); display: block; margin-bottom: 8px;">✨ Features:</strong>
+                                <ul style="margin: 0; padding-left: 20px; color: var(--text-primary);">
+                                    <li>Multiple fallback selectors</li>
+                                    <li>Comprehensive error handling</li>
+                                    <li>Debug logging built-in</li>
+                                    <li>Production ready (~40 lines)</li>
+                                </ul>
+                            </div>
+
+                            <div class="code-box" style="margin-bottom: 15px;">
+                                <pre id="script2" style="max-height: 200px; overflow-y: auto; margin: 0;"></pre>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-primary" onclick="openVariantModal(2)" style="flex: 1;">
+                                    📖 View Full Code
+                                </button>
+                                <button class="btn btn-success" onclick="copyScript(2)" style="flex: 1;">
+                                    📋 Copy Script
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Assistant CTA -->
+                <div class="alert alert-warning" style="cursor: pointer; transition: all 0.3s ease;" onclick="openAIAssistant()" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <strong>🤖 Need Help Choosing?</strong>
+                            <p style="margin: 5px 0 0 0;">Ask our AI Assistant to recommend the best variant for your use case</p>
+                        </div>
+                        <button class="action-btn primary" onclick="event.stopPropagation(); openAIAssistant()">
+                            Chat with AI
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Documentation Preview -->
+                <div class="doc-preview">
+                    <h3>📖 Auto-Generated Documentation</h3>
+                    <pre id="docPreview"></pre>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="saveToLibrary()">
+                        💾 Save to Library
+                    </button>
+                    <button class="btn btn-success" onclick="resetGenerator()">
+                        🔄 Generate New
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Mode Modal -->
+    <div id="batchModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📦 Batch Generator</h2>
+                <button class="close-btn" onclick="closeBatchModal()">×</button>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>💡 Batch Mode</strong>
+                <p>Run all 5 diagnostic scripts and paste results here to generate all scripts at once.</p>
+            </div>
+
+            <div class="batch-container">
+                <div class="batch-script" id="batchCart">
+                    <div class="icon">🛒</div>
+                    <h4>Cart Items</h4>
+                    <div class="status pending"></div>
+                </div>
+                <div class="batch-script" id="batchPayment">
+                    <div class="icon">💳</div>
+                    <h4>Payment</h4>
+                    <div class="status pending"></div>
+                </div>
+                <div class="batch-script" id="batchDisable">
+                    <div class="icon">🔒</div>
+                    <h4>Disable</h4>
+                    <div class="status pending"></div>
+                </div>
+                <div class="batch-script" id="batchAutofill">
+                    <div class="icon">⚡</div>
+                    <h4>Autofill</h4>
+                    <div class="status pending"></div>
+                </div>
+                <div class="batch-script" id="batchTotal">
+                    <div class="icon">💰</div>
+                    <h4>Total</h4>
+                    <div class="status pending"></div>
+                </div>
+            </div>
+
+            <textarea id="batchInput" placeholder="Paste all diagnostic results here..." style="min-height: 300px;"></textarea>
+
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeBatchModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="processBatch()">🚀 Generate All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant Modal -->
+    <!-- Console Modal -->
+    <div id="consoleModal" class="modal">
+        <div class="modal-content" style="max-width: 1400px;">
+            <div class="modal-header">
+                <h2>💻 Browser Console Simulator</h2>
+                <button class="close-btn" onclick="closeConsole()">×</button>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ Testing Environment:</strong>
+                <p>Test your diagnostic scripts here. Enter the URL and run the script to see results.</p>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <label style="color: var(--text-primary); display: block; margin-bottom: 10px;">
+                    <strong>Target URL:</strong>
+                </label>
+                <input type="text" id="consoleURL" placeholder="https://example.com/cart" 
+                       style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--light); color: var(--text-primary);">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: 60vh;">
+                <div>
+                    <h4 style="color: var(--text-primary); margin-bottom: 10px;">Script Input:</h4>
+                    <textarea id="consoleInput" placeholder="Paste diagnostic script here..." 
+                              style="width: 100%; height: calc(100% - 80px); font-family: 'Courier New', monospace; font-size: 0.9rem;"></textarea>
+                    <button class="btn btn-primary" onclick="runInConsole()" style="width: 100%; margin-top: 10px;">
+                        ▶️ Run Script
+                    </button>
+                </div>
+                <div>
+                    <h4 style="color: var(--text-primary); margin-bottom: 10px;">Console Output:</h4>
+                    <div class="debug-logger" style="height: calc(100% - 40px); display: block;">
+                        <div id="consoleOutput"></div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="clearConsoleOutput()" style="width: 100%; margin-top: 10px;">
+                        🗑️ Clear Output
+                    </button>
+                </div>
+            </div>
+
+            <div class="tip" style="margin-top: 20px;">
+                <strong>💡 Tip:</strong>
+                <p>This console uses an iframe to load the target page and execute your script. Due to CORS restrictions, some sites may not work. For best results, test on pages that allow iframe embedding or use the browser's actual DevTools console.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Variant Modals -->
+    <div id="variantModal0" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🎯 Basic Variant</h2>
+                <button class="close-btn" onclick="closeVariantModal(0)">×</button>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>✨ Features:</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    <li>Quick execution</li>
+                    <li>Minimal code</li>
+                    <li>Easy to understand</li>
+                    <li>Works on most sites</li>
+                </ul>
+            </div>
+
+            <div class="code-box">
+                <div class="code-header">
+                    <div class="code-label">
+                        <span>Confidence:</span>
+                        <span class="confidence-badge confidence-high" id="modalConfidence0">95%</span>
+                    </div>
+                    <button class="copy-btn" onclick="copyScript(0)">📋 Copy</button>
+                </div>
+                <pre id="modalScript0"></pre>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeVariantModal(0)">Close</button>
+                <button class="btn btn-primary" onclick="testVariant(0)">🧪 Test Script</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="variantModal1" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚡ Optimized Variant</h2>
+                <button class="close-btn" onclick="closeVariantModal(1)">×</button>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>✨ Features:</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    <li>Watches for DOM changes</li>
+                    <li>Auto-retry on failure</li>
+                    <li>Event listeners</li>
+                    <li>Modern approach</li>
+                </ul>
+            </div>
+
+            <div class="code-box">
+                <div class="code-header">
+                    <div class="code-label">
+                        <span>Confidence:</span>
+                        <span class="confidence-badge confidence-medium" id="modalConfidence1">90%</span>
+                    </div>
+                    <button class="copy-btn" onclick="copyScript(1)">📋 Copy</button>
+                </div>
+                <pre id="modalScript1"></pre>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeVariantModal(1)">Close</button>
+                <button class="btn btn-primary" onclick="testVariant(1)">🧪 Test Script</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="variantModal2" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔧 Advanced Variant</h2>
+                <button class="close-btn" onclick="closeVariantModal(2)">×</button>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>✨ Features:</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    <li>Multiple fallback selectors</li>
+                    <li>Comprehensive error handling</li>
+                    <li>Debug logging</li>
+                    <li>Production ready</li>
+                </ul>
+            </div>
+
+            <div class="code-box">
+                <div class="code-header">
+                    <div class="code-label">
+                        <span>Confidence:</span>
+                        <span class="confidence-badge confidence-high" id="modalConfidence2">98%</span>
+                    </div>
+                    <button class="copy-btn" onclick="copyScript(2)">📋 Copy</button>
+                </div>
+                <pre id="modalScript2"></pre>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeVariantModal(2)">Close</button>
+                <button class="btn btn-primary" onclick="testVariant(2)">🧪 Test Script</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HTML Preview Modal (for Cart scripts) -->
+    <div id="htmlPreviewModal" class="modal">
+        <div class="modal-content" style="max-width: 1200px;">
+            <div class="modal-header">
+                <h2>👀 HTML Preview - Cart Contents</h2>
+                <button class="close-btn" onclick="closeHTMLPreview()">×</button>
+            </div>
+
+            <div class="alert alert-success">
+                <strong>✅ This is the HTML your script will extract</strong>
+                <p>Copy this to analyze cart contents and verify product data.</p>
+            </div>
+
+            <div class="code-box">
+                <div class="code-header">
+                    <div class="code-label">
+                        <span>📄 Cart HTML</span>
+                        <span style="margin-left: 10px; color: #a0aec0;" id="htmlSize"></span>
+                    </div>
+                    <button class="copy-btn" onclick="copyHTMLPreview()">📋 Copy HTML</button>
+                </div>
+                <pre id="htmlPreviewContent" style="max-height: 500px; overflow-y: auto;"></pre>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeHTMLPreview()">Close</button>
+                <button class="btn btn-primary" onclick="formatHTMLPreview()">🎨 Format HTML</button>
+                <button class="btn btn-success" onclick="analyzeHTML()">🔍 Analyze</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HTML Visualizer Modal (Problem 1 Fix) -->
+    <div id="htmlVisualizerModal" class="modal">
+        <div class="modal-content" style="max-width: 1400px; height: 90vh;">
+            <div class="modal-header">
+                <h2>🎨 HTML Visualizer - Cart Contents</h2>
+                <button class="close-btn" onclick="closeHTMLVisualizer()">×</button>
+            </div>
+            <div class="modal-body" style="display: flex; gap: 20px; height: calc(100% - 120px); overflow: hidden;">
+                <!-- Left Panel: Raw HTML Input -->
+                <div style="flex: 1; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0;">📝 Raw HTML Input</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-secondary" onclick="pasteHTMLCode()" style="padding: 8px 16px;">
+                                📋 Paste
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearHTMLInput()" style="padding: 8px 16px;">
+                                🗑️ Clear
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="htmlRawInput" 
+                              placeholder="Paste raw HTML code here..."
+                              style="flex: 1; font-family: 'Consolas', monospace; font-size: 13px; padding: 15px; border: 2px solid var(--border); border-radius: 12px; resize: none; background: var(--card-bg); color: var(--text-primary);"></textarea>
+                    <div style="margin-top: 10px; font-size: 0.9rem; color: var(--text-secondary);">
+                        💡 Paste the HTML output from running the getItems() script in browser console
+                    </div>
+                </div>
+                
+                <!-- Right Panel: Visual Preview -->
+                <div style="flex: 1; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0;">👁️ Visual Preview</h3>
+                        <button class="btn btn-primary" onclick="visualizeHTML()" style="padding: 8px 16px;">
+                            🎨 Visualize
+                        </button>
+                    </div>
+                    <div id="htmlVisualOutput" 
+                         style="flex: 1; border: 2px solid var(--border); border-radius: 12px; padding: 20px; overflow: auto; background: white; color: #000;">
+                        <div style="color: #999; text-align: center; padding: 40px;">
+                            Click "Visualize" to see the HTML rendered
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.9rem; color: var(--text-secondary);">
+                        📊 <span id="htmlStats">No HTML loaded</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Methods Selection Modal (Problem 2 Fix) -->
+    <div id="paymentMethodsModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>⚙️ Configure Payment Methods</h2>
+                <button class="close-btn" onclick="closePaymentMethodsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <strong>📝 Instructions:</strong> Check the payment methods you want to <strong>HIDE</strong>.
+                    Unchecked methods will remain visible to customers.
+                </div>
+                
+                <div id="paymentMethodsList" style="max-height: 400px; overflow-y: auto;">
+                    <!-- Payment methods will be populated here -->
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: var(--card-bg); border-radius: 8px;">
+                    <strong>✅ Selected to hide: </strong>
+                    <span id="selectedMethodsCount">0</span> methods
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closePaymentMethodsModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="applyPaymentMethodsSelection()">
+                    ✅ Apply Selection
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script-generator-pro.js"></script>
+</body>
+</html>
