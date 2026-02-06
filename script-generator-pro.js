@@ -648,11 +648,19 @@ const scriptConfigs = {
         const style = window.getComputedStyle(el);
         return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
     }
+
+    function getClassName(el) {
+        const raw = el.className;
+        if (typeof raw === 'string') return raw;
+        if (raw && typeof raw.baseVal === 'string') return raw.baseVal;
+        if (raw && typeof raw.value === 'string') return raw.value;
+        return raw ? String(raw) : '';
+    }
     
     function getScore(el) {
         let score = 0;
         const text = (el.textContent || '').toLowerCase();
-        const cls = (el.className || '').toLowerCase();
+        const cls = getClassName(el).toLowerCase();
         const id = (el.id || '').toLowerCase();
         const attrs = [el.getAttribute('data-testid'), el.getAttribute('data-test'), el.getAttribute('data-qa'), el.getAttribute('aria-label')]
             .filter(Boolean).join(' ').toLowerCase();
@@ -674,7 +682,7 @@ const scriptConfigs = {
             const value = el.getAttribute(attr);
             if (value) return \`[\${attr}="\${value}"]\`;
         }
-        const classes = (el.className || '')
+        const classes = getClassName(el)
             .split(' ')
             .filter(c => c && !/^[a-f0-9]{6,}$/i.test(c))
             .slice(0, 2);
@@ -801,11 +809,19 @@ getItems();`,
         const style = window.getComputedStyle(el);
         return style.display !== 'none' && style.visibility !== 'hidden';
     }
+
+    function getClassName(el) {
+        const raw = el.className;
+        if (typeof raw === 'string') return raw;
+        if (raw && typeof raw.baseVal === 'string') return raw.baseVal;
+        if (raw && typeof raw.value === 'string') return raw.value;
+        return raw ? String(raw) : '';
+    }
     
     function getScore(el) {
         let score = 0;
         const text = (el.textContent || '').toLowerCase();
-        const cls = (el.className || '').toLowerCase();
+        const cls = getClassName(el).toLowerCase();
         const id = (el.id || '').toLowerCase();
         const attrs = [el.getAttribute('data-testid'), el.getAttribute('data-qa'), el.getAttribute('aria-label')]
             .filter(Boolean).join(' ').toLowerCase();
@@ -825,7 +841,7 @@ getItems();`,
             const value = el.getAttribute(attr);
             if (value) return \`[\${attr}="\${value}"]\`;
         }
-        const classes = (el.className || '').split(' ').filter(Boolean).slice(0, 2);
+        const classes = getClassName(el).split(' ').filter(Boolean).slice(0, 2);
         return classes.length ? el.tagName.toLowerCase() + '.' + classes.join('.') : el.tagName.toLowerCase();
     }
     
@@ -1013,7 +1029,18 @@ observer.observe(document.body, { childList: true, subtree: true });`,
             const value = el.getAttribute(attr);
             if (value) return \`[\${attr}="\${value}"]\`;
         }
-        const cls = (el.className || '').split(' ').filter(Boolean)[0];
+        const rawClass = el.className;
+        const cls = (typeof rawClass === 'string'
+            ? rawClass
+            : rawClass && typeof rawClass.baseVal === 'string'
+                ? rawClass.baseVal
+                : rawClass && typeof rawClass.value === 'string'
+                    ? rawClass.value
+                    : rawClass
+                        ? String(rawClass)
+                        : '')
+            .split(' ')
+            .filter(Boolean)[0];
         return cls ? \`\${el.tagName.toLowerCase()}.\${cls}\` : el.tagName.toLowerCase();
     }
     
@@ -1205,7 +1232,18 @@ document.addEventListener('DOMContentLoaded', disableCardFilling);`,
             const value = el.getAttribute(attr);
             if (value) return \`[\${attr}="\${value}"]\`;
         }
-        const cls = (el.className || '').split(' ').filter(Boolean)[0];
+        const rawClass = el.className;
+        const cls = (typeof rawClass === 'string'
+            ? rawClass
+            : rawClass && typeof rawClass.baseVal === 'string'
+                ? rawClass.baseVal
+                : rawClass && typeof rawClass.value === 'string'
+                    ? rawClass.value
+                    : rawClass
+                        ? String(rawClass)
+                        : '')
+            .split(' ')
+            .filter(Boolean)[0];
         return cls ? \`\${el.tagName.toLowerCase()}.\${cls}\` : el.tagName.toLowerCase();
     }
     
@@ -1391,6 +1429,14 @@ document.addEventListener('DOMContentLoaded', disableCardFilling);`,
         const style = window.getComputedStyle(el);
         return style.display !== 'none' && style.visibility !== 'hidden';
     }
+
+    function getClassName(el) {
+        const raw = el.className;
+        if (typeof raw === 'string') return raw;
+        if (raw && typeof raw.baseVal === 'string') return raw.baseVal;
+        if (raw && typeof raw.value === 'string') return raw.value;
+        return raw ? String(raw) : '';
+    }
     
     function extractAmount(text) {
         const currencies = [];
@@ -1415,7 +1461,7 @@ document.addEventListener('DOMContentLoaded', disableCardFilling);`,
     
     function getScore(el, info) {
         let score = 0;
-        const h = (el.textContent + (el.className || '') + (el.id || '') + (el.getAttribute('aria-label') || '')).toLowerCase();
+        const h = (el.textContent + getClassName(el) + (el.id || '') + (el.getAttribute('aria-label') || '')).toLowerCase();
         
         if (info.currencies.length) score += 10;
         if (info.amount >= 5 && info.amount <= 50000) score += 6;
@@ -1440,7 +1486,7 @@ document.addEventListener('DOMContentLoaded', disableCardFilling);`,
             const value = el.getAttribute(attr);
             if (value) return \`[\${attr}="\${value}"]\`;
         }
-        const classes = (el.className || '').split(' ').filter(c => c && !/^[a-f0-9]{6,}$/i.test(c)).slice(0, 2);
+        const classes = getClassName(el).split(' ').filter(c => c && !/^[a-f0-9]{6,}$/i.test(c)).slice(0, 2);
         return classes.length ? el.tagName.toLowerCase() + '.' + classes.join('.') : el.tagName.toLowerCase();
     }
     
