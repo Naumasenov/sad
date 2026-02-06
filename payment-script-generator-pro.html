@@ -162,6 +162,94 @@
             gap: 10px;
         }
 
+        .site-toolbar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .site-search {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1 1 320px;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .site-search input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .site-count {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .site-form {
+            background: var(--light);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .site-form .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .site-form input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .site-form input {
+            background: #1a202c;
+        }
+
+        .helper-text {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .site-empty {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 20px;
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            display: none;
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
         .site-list {
             display: grid;
             gap: 15px;
@@ -188,6 +276,22 @@
         .site-item.active {
             border-color: var(--primary);
             background: rgba(102, 126, 234, 0.1);
+        }
+
+        .site-item .site-info h4 {
+            margin-bottom: 4px;
+        }
+
+        .site-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .site-actions .icon-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: transparent;
         }
 
         .site-status {
@@ -972,10 +1076,31 @@
         <!-- Multi-Site Manager -->
         <div class="site-manager" id="siteManager" style="display: none;">
             <h3>🌐 Site Manager</h3>
+            <div class="site-toolbar">
+                <div class="site-search">
+                    🔎
+                    <input id="siteSearch" type="search" placeholder="Search sites by name or URL..." oninput="filterSites()" />
+                    <span class="site-count" id="siteCount">0 sites</span>
+                </div>
+                <button class="btn btn-secondary" type="button" onclick="toggleSiteForm()">
+                    ➕ New Site
+                </button>
+            </div>
+            <div class="site-form" id="siteForm" style="display: none;">
+                <div class="form-row">
+                    <input id="siteNameInput" type="text" placeholder="Site name (e.g. My Store)" />
+                    <input id="siteUrlInput" type="url" placeholder="https://example.com/checkout" />
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" type="button" onclick="submitSiteForm()">💾 Save Site</button>
+                    <button class="btn btn-ghost" type="button" onclick="cancelSiteForm()">Cancel</button>
+                </div>
+                <div class="helper-text" id="siteFormHelper">Tip: Add full checkout or cart URL for faster testing.</div>
+            </div>
+            <div class="site-empty" id="siteEmpty">
+                No sites added yet. Create your first site to save scripts & presets.
+            </div>
             <div class="site-list" id="siteList"></div>
-            <button class="btn btn-primary" onclick="addNewSite()" style="margin-top: 15px;">
-                ➕ Add New Site
-            </button>
         </div>
 
         <!-- Main Generator Cards -->
